@@ -114,7 +114,7 @@ const DISHES = [
   {id:58,name:"Хачапури",g:"",cat:"выпечка",n:1}
 ];
 
-const PEOPLE = ["Макс","Юля","Дети"];
+const PEOPLE = ["Макс","Юля","Мила","Василиса"];
 let currentPerson = null;
 let ratings = JSON.parse(localStorage.getItem('vr')||'{}');
 let activeCat = 'все';
@@ -122,7 +122,7 @@ let activeCat = 'все';
 function init(){
   // Who buttons
   document.getElementById('who').innerHTML = PEOPLE.map(p =>
-    `<button onclick="setPerson('${p}')" id="who-${p}">${p==='Дети'?'👧 Дети':p==='Юля'?'👩 Юля':'👨 Макс'}</button>`
+    `<button onclick="setPerson('${p}')" id="who-${p}">${{Макс:'👨 Макс',Юля:'👩 Юля',Мила:'👧 Мила',Василиса:'👧 Василиса'}[p]}</button>`
   ).join('');
   renderCats();
 }
