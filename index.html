@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🍽 Оцени блюда Валентины</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1a2e;color:#e0e0e0;min-height:100vh;padding:16px}
+.container{max-width:600px;margin:0 auto}
+h1{color:#d4a843;font-size:1.4em;margin-bottom:4px}
+.sub{color:#888;font-size:0.85em;margin-bottom:16px}
+.who{display:flex;gap:8px;margin-bottom:16px}
+.who button{flex:1;padding:12px;border-radius:10px;border:2px solid #2a2a4a;background:#16213e;color:#ccc;font-size:1em;cursor:pointer;transition:all .2s}
+.who button.active{border-color:#d4a843;color:#d4a843;background:#1a2744}
+.cats{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.cats button{background:#16213e;border:1px solid #2a2a4a;color:#aaa;padding:4px 12px;border-radius:16px;font-size:0.8em;cursor:pointer}
+.cats button.active{background:#d4a843;color:#1a1a2e;border-color:#d4a843}
+.dish{background:#16213e;border-radius:10px;padding:12px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
+.dish-left{flex:1}
+.dish-name{font-weight:600;font-size:0.95em}
+.dish-info{color:#888;font-size:0.75em;margin-top:2px}
+.stars{display:flex;gap:4px}
+.star{font-size:1.6em;cursor:pointer;color:#333;user-select:none;-webkit-tap-highlight-color:transparent;transition:color .15s}
+.star.filled{color:#d4a843}
+.progress{background:#16213e;border-radius:10px;padding:14px;margin-bottom:16px;text-align:center}
+.progress .num{font-size:2em;color:#d4a843;font-weight:700}
+.progress .lbl{color:#888;font-size:0.85em}
+.bar{height:6px;background:#2a2a4a;border-radius:3px;margin-top:8px;overflow:hidden}
+.bar-fill{height:100%;background:#d4a843;border-radius:3px;transition:width .3s}
+.send-btn{width:100%;padding:14px;background:#d4a843;color:#1a1a2e;border:none;border-radius:10px;font-size:1.1em;font-weight:700;cursor:pointer;margin-top:12px;margin-bottom:40px}
+.send-btn:hover{background:#e0b850}
+.send-btn:disabled{background:#333;color:#666;cursor:default}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#0f3460;color:#d4a843;padding:10px 24px;border-radius:8px;font-size:0.9em;display:none;z-index:100;border:1px solid #d4a843}
+.toast.show{display:block}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🍽 Оцени блюда Валентины</h1>
+  <p class="sub">Нажми на звёзды: 1★ не нравится — 5★ обожаю. Пропускай что не пробовали.</p>
+
+  <p class="sub" style="margin-bottom:8px">Кто оценивает?</p>
+  <div class="who" id="who"></div>
+
+  <div class="progress" id="progress"></div>
+
+  <div class="cats" id="cats"></div>
+  <div id="dishes"></div>
+
+  <button class="send-btn" id="sendBtn" onclick="sendResults()">📤 Отправить оценки Максу</button>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const DISHES = [
+  {id:1,name:"Бефстроганов",g:"пюре/гречка/булгур",cat:"мясо",n:14},
+  {id:2,name:"Роллы",g:"",cat:"детское",n:12},
+  {id:3,name:"Наггетсы куриные",g:"",cat:"детское",n:12},
+  {id:4,name:"Грибочки с сыром",g:"",cat:"закуска",n:11},
+  {id:5,name:"Крабовый салат",g:"",cat:"салат",n:9},
+  {id:6,name:"Курица в сливочном соусе",g:"булгур/гречка",cat:"птица",n:8},
+  {id:7,name:"Аджапсандали",g:"",cat:"овощи",n:8},
+  {id:8,name:"Клефтико",g:"картошка",cat:"мясо",n:7},
+  {id:9,name:"Голубцы",g:"",cat:"мясо",n:7},
+  {id:10,name:"Харчо",g:"",cat:"суп",n:6},
+  {id:11,name:"Винегрет",g:"",cat:"салат",n:6},
+  {id:12,name:"Творожная запеканка",g:"банан/яблоко",cat:"выпечка",n:5},
+  {id:13,name:"Плов",g:"",cat:"мясо",n:4},
+  {id:14,name:"Перец фаршированный",g:"",cat:"мясо",n:4},
+  {id:15,name:"Творожные сырники",g:"",cat:"выпечка",n:4},
+  {id:16,name:"Тефтели/фрикадельки",g:"пюре/соус",cat:"мясо",n:4},
+  {id:17,name:"Котлеты по-киевски",g:"гречка",cat:"птица",n:3},
+  {id:18,name:"Лазанья",g:"",cat:"мясо",n:3},
+  {id:19,name:"Шницель куриный",g:"грибной соус",cat:"птица",n:3},
+  {id:20,name:"Мусака",g:"",cat:"мясо",n:3},
+  {id:21,name:"Курица с рисом и печенью",g:"",cat:"птица",n:3},
+  {id:22,name:"Свиные стейки в рукаве",g:"овощи",cat:"мясо",n:3},
+  {id:23,name:"Овсяные печенья",g:"",cat:"выпечка",n:3},
+  {id:24,name:"Макароны с креветками",g:"",cat:"рыба",n:3},
+  {id:25,name:"Котлеты мясные",g:"картошка/гречка",cat:"мясо",n:3},
+  {id:26,name:"Картофельная запеканка с мясом",g:"",cat:"мясо",n:3},
+  {id:27,name:"Курица в красном соусе",g:"рис/гречка",cat:"птица",n:2},
+  {id:28,name:"Гуляш мясной",g:"гречка",cat:"мясо",n:2},
+  {id:29,name:"Пирожки/треугольники",g:"мясо/яблоко/капуста",cat:"выпечка",n:2},
+  {id:30,name:"Осьминог",g:"",cat:"рыба",n:2},
+  {id:31,name:"Мясной рулет",g:"овощи/яйцо",cat:"мясо",n:2},
+  {id:32,name:"Пастицио",g:"",cat:"мясо",n:2},
+  {id:33,name:"Суп с фрикадельками",g:"",cat:"суп",n:2},
+  {id:34,name:"Гороховый суп",g:"",cat:"суп",n:2},
+  {id:35,name:"Солянка из капусты",g:"",cat:"овощи",n:2},
+  {id:36,name:"Гнёзда с мясом",g:"",cat:"мясо",n:2},
+  {id:37,name:"Баклажаны с фрикадельками",g:"",cat:"мясо",n:2},
+  {id:38,name:"Маленькие капустки",g:"брюссельская",cat:"овощи",n:2},
+  {id:39,name:"Блинчики с мясом",g:"",cat:"выпечка",n:1},
+  {id:40,name:"Оливье",g:"",cat:"салат",n:1},
+  {id:41,name:"Чашушули",g:"",cat:"мясо",n:1},
+  {id:42,name:"Яблочный пирог",g:"",cat:"выпечка",n:1},
+  {id:43,name:"Мясное рагу",g:"",cat:"мясо",n:1},
+  {id:44,name:"Блинчики из шпината",g:"",cat:"овощи",n:1},
+  {id:45,name:"Индейка запечённая",g:"",cat:"птица",n:1},
+  {id:46,name:"Индейка с капустой",g:"",cat:"птица",n:1},
+  {id:47,name:"Хачапури",g:"",cat:"выпечка",n:1},
+  {id:48,name:"Куриные рулетики",g:"",cat:"птица",n:1},
+  {id:49,name:"Рыба с овощами",g:"",cat:"рыба",n:1},
+  {id:50,name:"Кальмары с рисом",g:"",cat:"рыба",n:1},
+  {id:51,name:"Салат с кальмарами",g:"",cat:"салат",n:1},
+  {id:52,name:"Мимоза с тунцом",g:"",cat:"салат",n:1},
+  {id:53,name:"Грибной суп с лапшой",g:"",cat:"суп",n:1},
+  {id:54,name:"Китайский суп",g:"",cat:"суп",n:1},
+  {id:55,name:"Оладьи",g:"",cat:"выпечка",n:1},
+  {id:56,name:"Торт Монастырская Изба",g:"",cat:"выпечка",n:1},
+  {id:57,name:"Паштет",g:"",cat:"закуска",n:1},
+  {id:58,name:"Хачапури",g:"",cat:"выпечка",n:1}
+];
+
+const PEOPLE = ["Макс","Юля","Дети"];
+let currentPerson = null;
+let ratings = JSON.parse(localStorage.getItem('vr')||'{}');
+let activeCat = 'все';
+
+function init(){
+  // Who buttons
+  document.getElementById('who').innerHTML = PEOPLE.map(p =>
+    `<button onclick="setPerson('${p}')" id="who-${p}">${p==='Дети'?'👧 Дети':p==='Юля'?'👩 Юля':'👨 Макс'}</button>`
+  ).join('');
+  renderCats();
+}
+
+function setPerson(p){
+  currentPerson = p;
+  PEOPLE.forEach(x => document.getElementById('who-'+x).classList.toggle('active', x===p));
+  render();
+}
+
+function renderCats(){
+  const cats = ['все', ...new Set(DISHES.map(d=>d.cat))];
+  document.getElementById('cats').innerHTML = cats.map(c =>
+    `<button class="${c===activeCat?'active':''}" onclick="setCat('${c}')">${c}</button>`
+  ).join('');
+}
+
+function setCat(c){ activeCat=c; renderCats(); render(); }
+
+function render(){
+  if(!currentPerson){ document.getElementById('dishes').innerHTML='<p style="color:#888;text-align:center;padding:20px">👆 Сначала выбери кто оценивает</p>'; updateProgress(); return; }
+  let dishes = activeCat==='все' ? DISHES : DISHES.filter(d=>d.cat===activeCat);
+  document.getElementById('dishes').innerHTML = dishes.map(d => {
+    const r = (ratings[currentPerson]||{})[d.id]||0;
+    return `<div class="dish">
+      <div class="dish-left">
+        <div class="dish-name">${d.name}</div>
+        <div class="dish-info">${d.g?d.g+' · ':''}${d.cat} · ${d.n}× заказов</div>
+      </div>
+      <div class="stars">${[1,2,3,4,5].map(s=>`<span class="star ${s<=r?'filled':''}" onclick="rate(${d.id},${s})">★</span>`).join('')}</div>
+    </div>`;
+  }).join('');
+  updateProgress();
+}
+
+function rate(dishId, score){
+  if(!currentPerson) return;
+  if(!ratings[currentPerson]) ratings[currentPerson]={};
+  if(ratings[currentPerson][dishId]===score) ratings[currentPerson][dishId]=0;
+  else ratings[currentPerson][dishId]=score;
+  localStorage.setItem('vr',JSON.stringify(ratings));
+  render();
+}
+
+function updateProgress(){
+  const rated = currentPerson ? Object.values(ratings[currentPerson]||{}).filter(v=>v>0).length : 0;
+  const total = DISHES.length;
+  const pct = Math.round(rated/total*100);
+  document.getElementById('progress').innerHTML = `
+    <div class="num">${rated}/${total}</div>
+    <div class="lbl">${currentPerson ? currentPerson+': оценено блюд' : 'Выбери кто оценивает'}</div>
+    <div class="bar"><div class="bar-fill" style="width:${pct}%"></div></div>`;
+  
+  const anyRated = PEOPLE.some(p => Object.values(ratings[p]||{}).filter(v=>v>0).length > 0);
+  document.getElementById('sendBtn').disabled = !anyRated;
+}
+
+function sendResults(){
+  // Build summary text
+  let lines = ['🍽 Оценки блюд Валентины\n'];
+  PEOPLE.forEach(p => {
+    const r = ratings[p]||{};
+    const rated = Object.entries(r).filter(([k,v])=>v>0).map(([k,v])=>{
+      const d = DISHES.find(x=>x.id===+k);
+      return {name:d?d.name:'?', score:v};
+    }).sort((a,b)=>b.score-a.score);
+    if(rated.length===0) return;
+    lines.push(`${p}:`);
+    rated.forEach(x => lines.push(`${'★'.repeat(x.score)}${'☆'.repeat(5-x.score)} ${x.name}`));
+    lines.push('');
+  });
+  
+  const text = lines.join('\n');
+  
+  // Copy to clipboard
+  navigator.clipboard.writeText(text).then(()=>{
+    // Open Telegram chat with Max
+    const encoded = encodeURIComponent(text);
+    // Try Telegram deep link
+    window.open('https://t.me/share/url?url=&text='+encoded, '_blank');
+    showToast('📋 Скопировано! Отправь в Телеграм Максу');
+  }).catch(()=>{
+    // Fallback: show text to copy manually
+    prompt('Скопируй и отправь Максу:', text);
+  });
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 3000);
+}
+
+init();
+render();
+</script>
+</body>
+</html>
